@@ -393,7 +393,7 @@ Fraud-Detection/
 
 ## 👥 Team
 
-This project was built as a team for the **HackML 2026** competition hosted by **SFU DSSS** (Data Science Student Society) at Simon Fraser University.
+This project was built as a team for the **HackML 2026** competition hosted by **SFU DSSS** (Data Science Student Society) at Simon Fraser University. Here is the Authors list: Sahibjeet Pal Singh, Goutham Gopakumar, Bhuvesh Chauhan, and Louis Zhong.
 
 ---
 
