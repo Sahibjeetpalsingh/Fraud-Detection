@@ -56,6 +56,12 @@ HackML 2026 was a Kaggle competition run by the SFU Data Science Student Society
 
 This is not a balanced four-class problem. It is a needle-in-a-haystack problem where the needles are sorted into three different sizes and you have to tell them apart.
 
+<p align="center">
+  <img src="docs/images/chart1_class_distribution.png" width="72%" alt="Class distribution — 99.89% legitimate vs 0.11% fraud across three urgency levels" />
+</p>
+
+> The chart above makes the imbalance visceral. The legitimate class bar is not slightly taller — it is orders of magnitude larger. Any model that does not explicitly handle this will simply learn to predict "legitimate" for everything and call it done.
+
 ### Why the Metric Was Macro F1 — Not Accuracy
 
 | Metric | Model predicts "Class 0" for everything | What it actually measures |
@@ -202,6 +208,12 @@ Feature importance ranking (permutation-based, consistent across all 5 folds):
 
 > **Two lines of arithmetic — does the accounting balance? — contributed more to model performance than any hyperparameter tuning could have.**
 
+<p align="center">
+  <img src="docs/images/chart2_feature_importances.png" width="80%" alt="Feature importances — top 15 features averaged across 5 folds by mean gain" />
+</p>
+
+The chart above shows the top 15 features by mean gain, averaged across all five cross-validation folds. The balance error features (`balance_error_orig`, `balance_error_dest`) and the balance ratio features lead decisively. Everything else — the merchant flags, the zero-balance indicators, the cyclic time encoding — contributes, but the gap between the top features and the rest tells you where the real discriminating power lives. The insight from EDA translated directly into model gain.
+
 <br>
 
 ---
@@ -308,6 +320,16 @@ With 2,000-odd fraud examples spread across 6.2M rows, a naive random split coul
 | Evaluation reliability | ❌ Fold scores vary wildly | ✅ Consistent, trustworthy per-fold F1 |
 | Use on imbalanced data | ❌ Not recommended | ✅ Essential |
 
+### The Per-Fold Results
+
+<p align="center">
+  <img src="docs/images/chart4_fold_f1_scores.png" width="80%" alt="Fold F1 scores — 5-fold stratified CV, macro average, with mean and OOF lines" />
+</p>
+
+The fold-by-fold results tell an important story: the scores are consistent. Fold 1 is slightly higher (0.6267) and Fold 5 slightly lower (0.6042), but the range is narrow — about 2.3 percentage points across all five folds. The mean fold Macro F1 (0.6122, blue line) and the overall OOF Macro F1 (0.6123, red line) are nearly identical, which means the cross-validation estimate is stable and the individual fold scores are not random noise.
+
+A model that showed wildly different F1 scores across folds would be a red flag — it would mean the model is sensitive to which data it sees, and the OOF estimate would not be trustworthy. Tight fold scores mean the model is learning consistent patterns, not memorising the specific examples in each training fold.
+
 <br>
 
 ---
@@ -348,6 +370,16 @@ The classification report breaks the story down class by class, and the breakdow
 | **1 — Monitor** | Weakest class — smallest accounting irregularities | Hard to distinguish from noisy-but-legitimate transactions |
 | **2 — Review** | Zero-balance flags and merchant indicators help | Distinguishing from Class 1 — the margin is thin |
 | **3 — Immediate** | Balance error features dominant | ✅ Strongest performance — large accounting discrepancies |
+
+### The Confusion Matrix
+
+<p align="center">
+  <img src="docs/images/chart3_confusion_matrix.png" width="72%" alt="Confusion matrix — out-of-fold predictions showing true vs predicted urgency class" />
+</p>
+
+The confusion matrix shows the out-of-fold predictions across all five folds. The diagonal — true positives — is where the model gets things right. The off-diagonal cells are where it errs, and the pattern of those errors is as informative as the accuracy numbers.
+
+The most instructive cell is the false negatives on the minority class: cases the model predicts as lower urgency than they actually are. These are the operationally costly errors — the transactions that deserved immediate escalation but got routed to monitoring instead. The confusion matrix makes visible what aggregate F1 scores obscure: not all errors are equal, and the direction of error matters as much as the frequency.
 
 > **Class 1 is the hardest.** Lower urgency means the transaction looks more like a legitimate one. The smaller the fraud signal, the harder it is to separate from noise. No amount of feature engineering fully resolves this — it is a fundamental property of the problem.
 
@@ -423,6 +455,12 @@ Fraud-Detection/
 ├── requirements.txt     # pandas, numpy, scikit-learn, imbalanced-learn, xgboost, scipy
 ├── README.md            # This document
 ├── .gitignore           # Excludes train.csv, test.csv, submission.csv
+├── docs/
+│   └── images/
+│       ├── chart1_class_distribution.png   # Class imbalance visualisation
+│       ├── chart2_feature_importances.png  # Top 15 features by mean gain
+│       ├── chart3_confusion_matrix.png     # OOF confusion matrix
+│       └── chart4_fold_f1_scores.png       # Per-fold Macro F1 with mean/OOF lines
 ├── [train.csv]          # Download from Kaggle — not in repo
 └── [test.csv]           # Download from Kaggle — not in repo
 ```
